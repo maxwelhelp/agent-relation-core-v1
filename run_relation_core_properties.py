@@ -5,9 +5,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from dataclasses import replace
 from pathlib import Path
-from typing import Callable, Dict, List, Set
+from typing import Callable, Dict, List
 
 from agent_relation_core_v1 import RelationCore, Scenario
 from relation_core_redteam_scenarios import cases, M
@@ -41,7 +40,20 @@ def with_added(s: Scenario, *, tags=(), evidence=(), constraints=(), scenario_id
 def prop_dirty_guard_cuts_patch(core: RelationCore, base: Scenario):
     s = with_added(base, tags={"user_changes_conflict"}, constraints={"dirty_guard", "user_changes_conflict"}, scenario_id_suffix="__mut_dirty_guard")
     d = core.decide(s)
-    ok = d.selected not in DANGEROUS_ACTIONS and d.selected in {"rollback", "inspect_constraints", "ask_user", "deep_compare", "smart_context", "job_result", "read_symbol", "read_metrics_aggregation"}
+    # This law only says dirty_guard must cut PATCH/VERIFY. If job_running is also true,
+    # wait_job is a correct stronger current-state action.
+    allowed_safe = {
+        "rollback",
+        "inspect_constraints",
+        "ask_user",
+        "deep_compare",
+        "smart_context",
+        "job_result",
+        "read_symbol",
+        "read_metrics_aggregation",
+        "wait_job",
+    }
+    ok = d.selected not in DANGEROUS_ACTIONS and d.selected in allowed_safe
     return ok, s, d, "dirty_guard must cut patch/verify"
 
 
