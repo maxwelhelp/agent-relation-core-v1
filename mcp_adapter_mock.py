@@ -85,6 +85,9 @@ def events_to_scenario(
             if data.get("wide_change"):
                 tags.add("wide_change")
                 evidence.add("full_validation_needed")
+            if data.get("error_type") == "core" or data.get("core_logic_error"):
+                tags.add("core_logic_error")
+                evidence.add("core_logic_error")
 
         elif ev.kind == "artifact_compare":
             evidence.add("job_result_available")
@@ -104,6 +107,7 @@ def events_to_scenario(
         elif ev.kind == "smart_context":
             evidence.add("context_available")
             tags |= set(data.get("tags", []))
+            evidence |= set(data.get("evidence", []))
 
         elif ev.kind == "read_symbol":
             if data.get("target") == "reporting":
@@ -120,6 +124,12 @@ def events_to_scenario(
 
         elif ev.kind == "deep_compare":
             evidence.add("deep_compare_done")
+            tags |= set(data.get("tags", []))
+            evidence |= set(data.get("evidence", []))
+            # Adapter bridge: if the task/context says core and deep_compare is done
+            # after localized_core, then task-level core symptom becomes causal evidence.
+            if "core_logic_error" in tags and "localized_core" in evidence:
+                evidence.add("core_logic_error")
 
         elif ev.kind == "patch_apply":
             evidence.add("patch_applied")
