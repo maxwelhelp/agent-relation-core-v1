@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 relation_core_v1_results/
 relation_core_redteam_results/
+relation_core_trace_results/
+relation_core_property_results/
